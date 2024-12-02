@@ -1,7 +1,8 @@
 package br.com.grupoirrah.euphoriabot.entrypoint.listener;
 
-import br.com.grupoirrah.euphoriabot.core.usecase.interactor.CreateRoleUseCase;
-import br.com.grupoirrah.euphoriabot.core.util.LogUtil;
+import br.com.grupoirrah.euphoriabot.core.gateway.RolePermissionGateway;
+import br.com.grupoirrah.euphoriabot.core.usecase.interactor.TeamRoleChannelUseCase;
+import br.com.grupoirrah.euphoriabot.core.usecase.interactor.VerificationChannelUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
@@ -13,16 +14,15 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class GuildJoinListener extends ListenerAdapter {
 
-    private final CreateRoleUseCase createRoleUseCase;
+    private final VerificationChannelUseCase verificationChannelUseCase;
+    private final TeamRoleChannelUseCase teamRoleChannelUseCase;
+    private final RolePermissionGateway rolePermissionGateway;
 
     @Override
     public void onGuildJoin(GuildJoinEvent event) {
-        LogUtil.logInfo(log, "Recebido evento de entrada em um servidor: {}", event.getGuild().getName());
-
-        createRoleUseCase.execute(event);
-
-        LogUtil.logInfo(log, "Evento de entrada no servidor '{}' processado com sucesso!",
-                event.getGuild().getName());
+        verificationChannelUseCase.configureVerificationChannel(event);
+        teamRoleChannelUseCase.configureTeamRoleChannel(event);
+        rolePermissionGateway.updatePermissionsForCategoryRoleMapping(event.getGuild());
     }
 
 }

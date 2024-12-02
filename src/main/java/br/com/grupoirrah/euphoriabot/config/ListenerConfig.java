@@ -12,8 +12,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ListenerConfig {
 
-    private final JDA jda;
     private final List<ListenerAdapter> listeners;
+    private final JDA jda;
 
     @PostConstruct
     public void registerListeners() {

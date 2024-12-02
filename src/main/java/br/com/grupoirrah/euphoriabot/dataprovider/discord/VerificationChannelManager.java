@@ -1,7 +1,9 @@
 package br.com.grupoirrah.euphoriabot.dataprovider.discord;
 
+import br.com.grupoirrah.euphoriabot.config.DiscordConfig;
 import br.com.grupoirrah.euphoriabot.core.gateway.VerificationChannelGateway;
 import br.com.grupoirrah.euphoriabot.core.util.LogUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -10,21 +12,20 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.awt.*;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class VerificationChannelManager implements VerificationChannelGateway {
 
-    @Value("${channel.verification.id}")
-    private String verificationChannelId;
+    private final DiscordConfig discordConfig;
 
     @Override
     public void configureVerificationChannel(GuildJoinEvent event) {
-        TextChannel channel = event.getGuild().getTextChannelById(verificationChannelId);
+        TextChannel channel = event.getGuild().getTextChannelById(discordConfig.getVerificationChannelId());
 
         if (channel != null) {
             Role everyoneRole = event.getGuild().getPublicRole();
@@ -59,9 +60,8 @@ public class VerificationChannelManager implements VerificationChannelGateway {
                 .queue();
         } else {
             LogUtil.logError(log, "Canal de verificação não encontrado com o ID: {}",
-                verificationChannelId);
+                discordConfig.getVerificationChannelId());
         }
     }
-
 
 }
