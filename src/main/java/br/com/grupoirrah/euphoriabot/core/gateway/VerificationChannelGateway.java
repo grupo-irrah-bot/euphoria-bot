@@ -1,9 +1,9 @@
 package br.com.grupoirrah.euphoriabot.core.gateway;
 
-import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.api.entities.Guild;
 
 public interface VerificationChannelGateway {
 
-    void configureVerificationChannel(GuildJoinEvent event);
+    void configureVerificationChannel(Guild guild);
 
 }

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -24,11 +25,11 @@ public class VerificationChannelManager implements VerificationChannelGateway {
     private final DiscordConfig discordConfig;
 
     @Override
-    public void configureVerificationChannel(GuildJoinEvent event) {
-        TextChannel channel = event.getGuild().getTextChannelById(discordConfig.getVerificationChannelId());
+    public void configureVerificationChannel(Guild guild) {
+        TextChannel channel = guild.getTextChannelById(discordConfig.getVerificationChannelId());
 
         if (channel != null) {
-            Role everyoneRole = event.getGuild().getPublicRole();
+            Role everyoneRole = guild.getPublicRole();
 
             channel.getPermissionContainer()
                 .upsertPermissionOverride(everyoneRole)
@@ -36,7 +37,7 @@ public class VerificationChannelManager implements VerificationChannelGateway {
                 .deny(Permission.MESSAGE_SEND)
                 .queue();
 
-            event.getGuild().getRoles().stream()
+            guild.getRoles().stream()
                 .filter(role -> !role.isPublicRole())
                 .forEach(role -> channel.getPermissionContainer()
                     .upsertPermissionOverride(role)

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -28,12 +29,12 @@ public class TeamRoleChannelManager extends ListenerAdapter implements TeamRoleC
     private final Map<String, String> roleEmojiToRoleMap;
 
     @Override
-    public void configureTeamRoleChannel(GuildJoinEvent event) {
-        TextChannel channel = event.getGuild().getTextChannelById(discordConfig.getTeamRoleChannelId());
+    public void configureTeamRoleChannel(Guild guild) {
+        TextChannel channel = guild.getTextChannelById(discordConfig.getTeamRoleChannelId());
 
         if (channel != null) {
-            Role everyoneRole = event.getGuild().getPublicRole();
-            Role irradianteRole = event.getGuild().getRoleById(discordConfig.getRoleIrradianteId());
+            Role everyoneRole = guild.getPublicRole();
+            Role irradianteRole = guild.getRoleById(discordConfig.getRoleIrradianteId());
 
             if (irradianteRole == null) {
                 LogUtil.logError(log, "Role 'irradiante' não encontrada");
@@ -60,7 +61,7 @@ public class TeamRoleChannelManager extends ListenerAdapter implements TeamRoleC
         }
     }
 
-    public void sendTeamReactions(TextChannel channel) {
+    private void sendTeamReactions(TextChannel channel) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("🏆 Escolha seu Time");
         embed.setDescription("""
@@ -90,7 +91,7 @@ public class TeamRoleChannelManager extends ListenerAdapter implements TeamRoleC
         });
     }
 
-    public void sendRoleReactions(TextChannel channel) {
+    private void sendRoleReactions(TextChannel channel) {
         EmbedBuilder rolesEmbed = new EmbedBuilder();
         rolesEmbed.setTitle("📋 Escolha sua Função");
         rolesEmbed.setDescription("""

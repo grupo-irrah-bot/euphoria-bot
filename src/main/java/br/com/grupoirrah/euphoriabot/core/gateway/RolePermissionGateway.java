@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.Guild;
 
 public interface RolePermissionGateway {
 
+    void removeRolesBelowBot(Guild guild);
     void updatePermissionsForCategoryRoleMapping(Guild guild);
 
 }

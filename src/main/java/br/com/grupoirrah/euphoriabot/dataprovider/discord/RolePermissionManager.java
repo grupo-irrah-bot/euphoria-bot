@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,23 @@ import java.util.Map;
 public class RolePermissionManager implements RolePermissionGateway {
 
     private final DiscordConfig discordConfig;
+
+    @Override
+    public void removeRolesBelowBot(Guild guild) {
+        try {
+            Member botMember = guild.getSelfMember();
+
+            Role botRole = botMember.getRoles().isEmpty() ? null : botMember.getRoles().get(0);
+            if (botRole == null) {
+                LogUtil.logWarn(log, "Bot não possui um cargo atribuído no servidor {}", guild.getName());
+                return;
+            }
+
+            performRoleRemoval(guild, botRole);
+        } catch (Exception e) {
+            LogUtil.logException(log, "Erro ao processar a remoção de cargos no servidor " + guild.getName(), e);
+        }
+    }
 
     @Override
     public void updatePermissionsForCategoryRoleMapping(Guild guild) {
@@ -75,6 +93,25 @@ public class RolePermissionManager implements RolePermissionGateway {
                 LogUtil.logError(log, "Categoria ou Cargo não encontrado para ID: Categoria={}, Cargo={}",
                     categoryId, roleId);
             }
+        }
+    }
+
+    private void performRoleRemoval(Guild guild, Role botRole) {
+        try {
+            guild.getMembers().stream()
+                    .filter(member -> !member.getUser().isBot()) // Ignora outros bots
+                    .forEach(member -> {
+                        member.getRoles().stream()
+                                .filter(role -> role.getPosition() < botRole.getPosition()) // Seleciona apenas cargos abaixo do cargo do bot
+                                .forEach(role -> guild.removeRoleFromMember(member, role).queue(
+                                        success -> LogUtil.logInfo(log, "Cargo {} removido do membro {} no servidor {}",
+                                                role.getName(), member.getEffectiveName(), guild.getName()),
+                                        error -> LogUtil.logError(log, "Erro ao remover cargo {} do membro {} no servidor {}",
+                                                role.getName(), member.getEffectiveName(), guild.getName())
+                                ));
+                    });
+        } catch (Exception e) {
+            LogUtil.logException(log, "Erro ao remover cargos abaixo do bot no servidor " + guild.getName(), e);
         }
     }
 
