@@ -11,7 +11,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -21,9 +23,17 @@ public class ReactionListener extends ListenerAdapter {
     private final Map<String, String> teamEmojiToRoleMap;
     private final Map<String, String> roleEmojiToRoleMap;
 
+    private final Set<String> processedReactions = new HashSet<>();
+
     @Override
     public void onMessageReactionAdd(@NotNull MessageReactionAddEvent event) {
         if (isBot(event)) {
+            return;
+        }
+
+        String uniqueKey = generateUniqueKey(event);
+
+        if (!processedReactions.add(uniqueKey)) {
             return;
         }
 
@@ -52,16 +62,16 @@ public class ReactionListener extends ListenerAdapter {
                 }
 
                 event.getGuild().addRoleToMember(member, role).queue(
-                    success -> {
-                        if (event.getUser() != null) {
-                            event.getUser().openPrivateChannel().queue(privateChannel ->
-                                privateChannel.sendMessage(message + ": **" + role.getName() +
-                                    "** do **Grupo Irrah**").queue()
-                            );
-                        }
-                    },
-                    error -> log.error("Erro ao adicionar role {} ao usuário {}: {}", role.getName(),
-                        member.getEffectiveName(), error.getMessage())
+                        success -> {
+                            if (event.getUser() != null) {
+                                event.getUser().openPrivateChannel().queue(privateChannel ->
+                                        privateChannel.sendMessage(message + ": **" + role.getName() +
+                                                "** do **Grupo Irrah**").queue()
+                                );
+                            }
+                        },
+                        error -> log.error("Erro ao adicionar role {} ao usuário {}: {}", role.getName(),
+                                member.getEffectiveName(), error.getMessage())
                 );
             }
         }
@@ -70,6 +80,11 @@ public class ReactionListener extends ListenerAdapter {
     @Override
     public void onMessageReactionRemove(@NotNull MessageReactionRemoveEvent event) {
         if (isBot(event)) {
+            return;
+        }
+
+        String uniqueKey = generateUniqueKey(event);
+        if (!processedReactions.add(uniqueKey)) {
             return;
         }
 
@@ -98,16 +113,16 @@ public class ReactionListener extends ListenerAdapter {
                 }
 
                 event.getGuild().removeRoleFromMember(member, role).queue(
-                    success -> {
-                        if (event.getUser() != null) {
-                            event.getUser().openPrivateChannel().queue(privateChannel ->
-                                privateChannel.sendMessage(message + ": **" + role.getName() +
-                                    "** do **Grupo Irrah**").queue()
-                            );
-                        }
-                    },
-                    error -> log.error("Erro ao remover role {} do usuário {}: {}", role.getName(),
-                        member.getEffectiveName(), error.getMessage())
+                        success -> {
+                            if (event.getUser() != null) {
+                                event.getUser().openPrivateChannel().queue(privateChannel ->
+                                        privateChannel.sendMessage(message + ": **" + role.getName() +
+                                                "** do **Grupo Irrah**").queue()
+                                );
+                            }
+                        },
+                        error -> log.error("Erro ao remover role {} do usuário {}: {}", role.getName(),
+                                member.getEffectiveName(), error.getMessage())
                 );
             }
         }
@@ -117,8 +132,11 @@ public class ReactionListener extends ListenerAdapter {
         if (event.getMember() == null) {
             return false;
         }
-
         return event.getMember().getUser().isBot();
+    }
+
+    private String generateUniqueKey(GenericMessageReactionEvent event) {
+        return event.getMessageId() + ":" + event.getReaction().getEmoji().getName() + ":" + event.getUserId();
     }
 
 }

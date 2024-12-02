@@ -1,15 +1,23 @@
 package br.com.grupoirrah.euphoriabot.core.usecase.interactor;
 
-import br.com.grupoirrah.euphoriabot.core.gateway.*;
+import br.com.grupoirrah.euphoriabot.core.gateway.GuildGateway;
+import br.com.grupoirrah.euphoriabot.core.gateway.MailboxValidationProviderGateway;
+import br.com.grupoirrah.euphoriabot.core.gateway.OAuthTokenGateway;
+import br.com.grupoirrah.euphoriabot.core.gateway.UserButtonInteractionGateway;
+import br.com.grupoirrah.euphoriabot.core.gateway.UserGateway;
+import br.com.grupoirrah.euphoriabot.core.gateway.image.GenerateImageGateway;
 import br.com.grupoirrah.euphoriabot.core.usecase.boundary.output.AuthStateOutput;
 import br.com.grupoirrah.euphoriabot.core.usecase.boundary.output.UserProviderOutput;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.utils.FileUpload;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.io.File;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -24,6 +32,7 @@ public class AuthUseCase {
     private final UserGateway userGateway;
     private final GuildGateway guildGateway;
     private final MailboxValidationProviderGateway mailboxValidationProviderGateway;
+    private final GenerateImageGateway generateImageGateway;
 
     public Mono<Optional<String>> execute(String code, String state) throws Exception {
         String decodedState = URLDecoder.decode(state, StandardCharsets.UTF_8);
@@ -70,7 +79,7 @@ public class AuthUseCase {
 
         return mailboxValidationProviderGateway.validateEmail(email)
             .flatMap(isValid -> {
-                if (!isValid) {
+                if (Boolean.FALSE.equals(isValid)) {
                     String invalidEmailMessage = "Olá! Detectamos que o e-mail informado não pertence ao domínio " +
                         "do **Grupo Irrah**.";
 
@@ -78,9 +87,35 @@ public class AuthUseCase {
                 }
 
                 guildGateway.assignIrradianteRoleToMember(guild, member);
+                generateImageGateway.welcomeImage(member.getEffectiveName(), member.getEffectiveAvatarUrl());
+                sendFileWelcome(guild);
+
 
                 return guildGateway.sendRedirectChannelTeamSelectionMessage(hookContext, guild);
             });
     }
 
+    private static void sendFileWelcome(Guild guild) {
+        if (guild == null) {
+            log.info("Guild is null. Cannot send welcome file.");
+            return;
+        }
+
+        TextChannel channel = guild.getTextChannelById(1311855494549471254L);
+        if (channel == null) {
+            log.info("Text channel with ID 1311855494549471254L not found.");
+            return;
+        }
+
+        File welcomeFile = new File("src/main/resources/image/welcome.png");
+        if (!welcomeFile.exists()) {
+            log.error("Welcome file not found: {}", welcomeFile.getAbsolutePath());
+            return;
+        }
+
+        channel.sendFiles(FileUpload.fromData(welcomeFile)).queue(
+                success -> log.info("Welcome file sent successfully."),
+                error -> log.error("Failed to send welcome file: {}", error.getMessage())
+        );
+    }
 }

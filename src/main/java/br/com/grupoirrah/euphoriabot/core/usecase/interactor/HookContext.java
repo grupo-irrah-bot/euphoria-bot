@@ -23,4 +23,13 @@ public class HookContext {
             .queue();
     }
 
+
+    public void sendMessageWithId(String message, Button button, boolean ephemeral, String id) {
+        hook.sendMessage(message)
+            .addActionRow(button)
+            .setEphemeral(ephemeral)
+            .queue();
+    }
+
+
 }
